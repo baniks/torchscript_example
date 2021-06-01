@@ -31,29 +31,37 @@ int main(int argc, const char* argv[]) {
   }
 
   torch::jit::script::Module model;
+  cout << "Torchscript model path: " << argv[1] << endl;
 
   try {
-
-    cout << "Torchscript model: " << argv[1] << endl;
-
-    at::Tensor sample_input = torch::randint(/*high=*/10, {1, 17, 2});    
-    std::vector<torch::jit::IValue> input_vec;
-    input_vec.push_back(sample_input.to(at::kCUDA));  // Input: 1 x 17 x 2
-    
     // Load torchscript model
     model = load_model(argv[1]);
     cout << "Model loaded. " << endl;
-
-    // Mode prediction
-    at::Tensor sample_out = model.forward(input_vec).toTensor();
-    cout << "Model output:\n" << sample_out << endl;
-
-  }
+    }
   catch (const c10::Error& e) {
     std::cerr << "error loading the model\n";
     std::cerr << e.msg() << std::endl;
     return -1;
   }
+
+  // Access model parameters
+  cout << endl << "Model named parameters" << endl;
+  for(auto p : model.named_parameters()){
+    cout << p.name << ":" << p.value<< endl;
+  }
+
+  // Access member variable
+  cout << endl << "Model member variable: " << endl;
+  cout << model.attr("var") << endl;
+
+  // Input 
+  at::Tensor sample_input = torch::randint(/*high=*/10, {1, 17, 2});    
+  std::vector<torch::jit::IValue> input_vec;
+  input_vec.push_back(sample_input);  // Input: 1 x 17 x 2
+
+  // Mode prediction
+  at::Tensor sample_out = model.forward(input_vec).toTensor();
+  cout << "Model output:\n" << sample_out << endl;
 
   cout << "Done\n";
 
